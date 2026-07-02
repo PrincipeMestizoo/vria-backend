@@ -9,13 +9,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * Crea un usuario ADMINISTRADOR por defecto la primera vez que la aplicacion
- * arranca con la tabla de usuarios vacia, para poder autenticarse y luego
- * usar /api/auth/registrar y crear al resto del personal (bodegueros, etc).
- *
- * IMPORTANTE: cambiar esta contrasena inmediatamente en un entorno real.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j

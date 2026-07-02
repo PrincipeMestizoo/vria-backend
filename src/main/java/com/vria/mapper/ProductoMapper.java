@@ -21,7 +21,6 @@ public class ProductoMapper {
                 .build();
     }
 
-    /** Copia los campos editables del DTO sobre una entidad ya existente (update). */
     public void actualizarEntidad(Producto producto, ProductoRequestDTO dto) {
         producto.setNombre(dto.nombre());
         producto.setCategoria(dto.categoria());

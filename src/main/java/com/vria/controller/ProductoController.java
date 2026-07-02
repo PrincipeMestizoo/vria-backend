@@ -12,11 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * CRUD de productos. Segun el requerimiento del negocio, solo los roles
- * ADMINISTRADOR y BODEGUERO pueden crear, leer, actualizar o eliminar
- * productos (ASESOR queda fuera de este modulo).
- */
 @RestController
 @RequestMapping("/api/productos")
 @RequiredArgsConstructor

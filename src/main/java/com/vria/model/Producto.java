@@ -14,12 +14,6 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Entidad Producto del sistema VRIA.
- * Campos obligatorios segun el hallazgo 3.1 del Informe de Levantamiento VRIA
- * (codigo interno, nombre, categoria, proveedor, bultos, stock, precio de venta)
- * mas el modelo hibrido de umbral de stock critico (seccion 3.3).
- */
 @Entity
 @Table(name = "productos")
 @Getter

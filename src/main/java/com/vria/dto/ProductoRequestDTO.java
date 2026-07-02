@@ -7,10 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
-/**
- * DTO de entrada. Desacopla el contrato de la API del modelo de persistencia
- * (evita exponer campos como fechaRecepcion, que el sistema controla).
- */
+
 public record ProductoRequestDTO(
 
         @NotBlank(message = "El codigo interno es obligatorio")

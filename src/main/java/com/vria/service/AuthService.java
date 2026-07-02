@@ -34,10 +34,6 @@ public class AuthService {
         return new LoginResponse(token, usuario.getUsername(), usuario.getRol().name(), jwtService.getExpirationMs());
     }
 
-    /**
-     * Registro de usuarios. En un entorno real este endpoint tambien deberia
-     * protegerse (solo ADMINISTRADOR), ver ProductoController para el patron.
-     */
     public void registrar(RegisterRequest request) {
         if (usuarioRepository.existsByUsername(request.username())) {
             throw new CodigoDuplicadoException("El username ya esta en uso: " + request.username());
