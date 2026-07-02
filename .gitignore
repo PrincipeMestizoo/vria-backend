@@ -1,0 +1,4 @@
+*Zone.Identifier
+.idea
+src/main/resources/application.yml
+target
