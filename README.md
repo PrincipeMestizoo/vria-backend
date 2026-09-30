@@ -23,7 +23,7 @@ com.vria
  │    ├── model
  │    ├── repository
  │    └── service
- ├── products       -> catalogo (Product, Category, TypeCategory)
+ ├── products       -> catalogo (Product, Category)
  │    ├── controller
  │    ├── dto
  │    ├── model

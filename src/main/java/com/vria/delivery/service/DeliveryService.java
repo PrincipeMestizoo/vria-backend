@@ -4,6 +4,8 @@ import com.vria.delivery.dto.DeliveryDTO;
 import com.vria.delivery.enums.StateDelivery;
 import com.vria.delivery.model.Delivery;
 import com.vria.delivery.repository.DeliveryRepository;
+import com.vria.users.model.User;
+import com.vria.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import java.util.List;
 public class DeliveryService {
 
     private final DeliveryRepository deliveryRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<DeliveryDTO> findAll() {
@@ -32,7 +35,7 @@ public class DeliveryService {
         return deliveryRepository.findByState(state).stream().map(this::toDTO).toList();
     }
 
-    public DeliveryDTO create(DeliveryDTO dto) {
+    public DeliveryDTO create(DeliveryDTO dto, User initiator) {
         Delivery entity = Delivery.builder()
                 .nameClient(dto.nameClient())
                 .nameDelivery(dto.nameDelivery())
@@ -40,6 +43,7 @@ public class DeliveryService {
                 .payMode(dto.payMode())
                 .dateDelivery(dto.dateDelivery())
                 .state(dto.state())
+                .user(userRepository.getReferenceById(initiator.getIdUser()))
                 .build();
         return toDTO(deliveryRepository.save(entity));
     }
@@ -67,7 +71,10 @@ public class DeliveryService {
                 entity.getAddress(),
                 entity.getPayMode(),
                 entity.getDateDelivery(),
-                entity.getState()
+                entity.getState(),
+                entity.getUser().getIdUser(),
+                entity.getUser().getName() + " " + entity.getUser().getLastName(),
+                entity.getUser().getRole()
         );
     }
 }

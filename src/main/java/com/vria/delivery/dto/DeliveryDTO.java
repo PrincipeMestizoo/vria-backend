@@ -2,6 +2,7 @@ package com.vria.delivery.dto;
 
 import com.vria.delivery.enums.StateDelivery;
 import com.vria.transfer.enums.PayMode;
+import com.vria.users.enums.TypeRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -26,6 +27,11 @@ public record DeliveryDTO(
         LocalDateTime dateDelivery,
 
         @NotNull(message = "El estado de la entrega es obligatorio")
-        StateDelivery state
+        StateDelivery state,
+
+        // Solo lectura
+        Long idUser,
+        String nameUser,
+        TypeRole roleUser
 ) {
 }

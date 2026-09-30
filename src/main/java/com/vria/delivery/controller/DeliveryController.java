@@ -3,12 +3,14 @@ package com.vria.delivery.controller;
 import com.vria.delivery.dto.DeliveryDTO;
 import com.vria.delivery.enums.StateDelivery;
 import com.vria.delivery.service.DeliveryService;
+import com.vria.users.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,8 +40,9 @@ public class DeliveryController {
     }
 
     @PostMapping
-    public ResponseEntity<DeliveryDTO> create(@Valid @RequestBody DeliveryDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(deliveryService.create(dto));
+    public ResponseEntity<DeliveryDTO> create(@Valid @RequestBody DeliveryDTO dto,
+                                              @AuthenticationPrincipal User user) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(deliveryService.create(dto, user));
     }
 
     @PatchMapping("/{id}/state")

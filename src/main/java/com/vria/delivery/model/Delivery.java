@@ -2,6 +2,7 @@ package com.vria.delivery.model;
 
 import com.vria.transfer.enums.PayMode;
 import com.vria.delivery.enums.StateDelivery;
+import com.vria.users.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,4 +43,9 @@ public class Delivery {
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false, length = 20)
     private StateDelivery state;
+
+    // Usuario (ADMIN o COMMERCIAL_ADVISOR) que inicio el despacho
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_user", nullable = false)
+    private User user;
 }

@@ -21,8 +21,4 @@ public class Category {
 
     @Column(name = "name_category", nullable = false, length = 100)
     private String nameCategory;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_type_category", nullable = false)
-    private TypeCategory typeCategory;
 }

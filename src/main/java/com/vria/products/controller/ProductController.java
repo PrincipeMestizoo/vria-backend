@@ -22,7 +22,9 @@ public class ProductController {
 
     private final ProductService productService;
 
+    // Lectura abierta a cualquier rol autenticado: alimenta el semaforo de stock del dashboard
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ProductResponseDTO>> findAll() {
         return ResponseEntity.ok(productService.findAll());
     }
