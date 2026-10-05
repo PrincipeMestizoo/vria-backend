@@ -22,8 +22,9 @@ public class Product {
     @Column(name = "name_product", nullable = false, length = 150)
     private String nameProduct;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_category", nullable = false)
+    // Opcional: al eliminar una categoria sus productos quedan sin categoria
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_category")
     private Category category;
 
     @Column(name = "stock", nullable = false)

@@ -3,6 +3,7 @@ package com.vria.products.service;
 import com.vria.products.dto.CategoryDTO;
 import com.vria.products.model.Category;
 import com.vria.products.repository.CategoryRepository;
+import com.vria.products.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
     public List<CategoryDTO> findAll() {
@@ -40,7 +42,10 @@ public class CategoryService {
     }
 
     public void delete(Long id) {
-        categoryRepository.delete(findEntity(id));
+        Category entity = findEntity(id);
+        // Desvincula los productos antes de borrar para no violar la llave foranea
+        productRepository.clearCategory(id);
+        categoryRepository.delete(entity);
     }
 
     private Category findEntity(Long id) {

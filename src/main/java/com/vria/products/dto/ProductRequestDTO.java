@@ -7,7 +7,7 @@ public record ProductRequestDTO(
         @NotBlank(message = "El nombre del producto es obligatorio")
         String nameProduct,
 
-        @NotNull(message = "La categoria es obligatoria")
+        // Opcional: un producto puede quedar sin categoria
         Long idCategory,
 
         @PositiveOrZero(message = "El stock no puede ser negativo")

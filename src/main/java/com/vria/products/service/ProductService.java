@@ -71,16 +71,20 @@ public class ProductService {
     }
 
     private Category findCategory(Long id) {
+        if (id == null) {
+            return null;
+        }
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoria no encontrada con id: " + id));
     }
 
     private ProductResponseDTO toResponse(Product product) {
+        Category category = product.getCategory();
         return new ProductResponseDTO(
                 product.getIdProduct(),
                 product.getNameProduct(),
-                product.getCategory().getIdCategory(),
-                product.getCategory().getNameCategory(),
+                category != null ? category.getIdCategory() : null,
+                category != null ? category.getNameCategory() : null,
                 product.getStock(),
                 product.getPrice(),
                 product.getReference(),
