@@ -61,6 +61,19 @@ public class ProductService {
         return toResponse(productRepository.save(product));
     }
 
+    public ProductResponseDTO reduceProduct(int quantity, Long id) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad a reducir debe ser mayor a 0");
+        }
+        Product product = findEntity(id);
+        if (quantity > product.getStock()) {
+            throw new IllegalArgumentException("Stock insuficiente para el producto " + product.getNameProduct()
+                    + ": disponible " + product.getStock() + ", solicitado " + quantity);
+        }
+        product.setStock(product.getStock() - quantity);
+        return toResponse(productRepository.save(product));
+    }
+
     public void delete(Long id) {
         productRepository.delete(findEntity(id));
     }
