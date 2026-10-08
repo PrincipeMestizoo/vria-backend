@@ -55,6 +55,8 @@ Variables de entorno (con valores por defecto en `application.yml`):
 | `JWT_SECRET`          | Clave Base64 para firmar los JWT (HS256)  | |
 | `JWT_EXPIRATION`      | Expiracion del access token (ms)          |         |
 | `JWT_REFRESH_EXPIRATION` | Expiracion del refresh token (ms)      |     |
+| `JWT_COOKIE_SECURE`   | Cookies de auth solo por HTTPS            | `true`                 |
+| `JWT_COOKIE_SAME_SITE` | Atributo SameSite de las cookies de auth | `Strict`               |
 
 > **Importante:** genera tu propio `JWT_SECRET` en produccion. Puedes crear uno con:
 > `openssl rand -base64 64`

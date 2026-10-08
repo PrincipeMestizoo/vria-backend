@@ -33,8 +33,11 @@ vria:
     jwt:
       # Clave secreta en Base64 (HS256). Cambiar en produccion via variable de entorno.
       secret-key: ${JWT_SECRET}
-      expiration-ms: ${JWT_EXPIRATION:86400000}       # 24h
-      refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000} # 7 dias
+      expiration-ms: ${JWT_EXPIRATION:1800000}        # 30 min
+      refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:3600000} # 1 hora
+      # Cookies HttpOnly que transportan los tokens
+      cookie-secure: ${JWT_COOKIE_SECURE:true}          # true = solo HTTPS (localhost se permite en navegadores)
+      cookie-same-site: ${JWT_COOKIE_SAME_SITE:Strict}
 
 logging:
   level:
