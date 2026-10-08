@@ -20,6 +20,8 @@
     <properties>
         <java.version>25</java.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <!-- Desde JDK 23 javac no ejecuta annotation processors (Lombok) por defecto -->
+        <maven.compiler.proc>full</maven.compiler.proc>
     </properties>
 
     <dependencies>
