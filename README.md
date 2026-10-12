@@ -1,113 +1,88 @@
 # VRIA Backend
 
-Backend del sistema de gestion comercial y logistica **VRIA**, construido con
-**Java 25**, **Spring Boot 4.1.1**, **Spring Security + JWT** y **PostgreSQL**.
+VRIA es un sistema de gestión comercial y logística. Este repositorio contiene su backend: una API REST que permite administrar el catálogo de productos, controlar el inventario, registrar los pagos recibidos por transferencia y hacer seguimiento a las entregas a clientes.
 
-## Estructura del proyecto
+Está construido con Java 25 y Spring Boot 4, usa PostgreSQL como base de datos y protege el acceso mediante tokens JWT.
 
-El proyecto esta organizado por **modulos de dominio** (feature-based), cada uno
-con sus propias capas internas:
+## ¿Qué se puede hacer con VRIA?
+
+- **Gestionar usuarios.** Los administradores crean, editan y dan de baja a las personas que usan el sistema, y les asignan un rol.
+- **Mantener el catálogo de productos.** Cada producto tiene nombre, referencia, descripción, precio, existencias, una foto y, opcionalmente, una categoría.
+- **Organizar por categorías.** Las categorías agrupan los productos. Si se elimina una categoría, sus productos no se pierden: simplemente quedan sin categoría.
+- **Descontar existencias.** Cuando sale mercancía se puede reducir el stock de un producto. El sistema impide descontar más unidades de las que hay disponibles.
+- **Registrar transferencias.** Se guardan los comprobantes de pago recibidos por transferencia bancaria: cliente, banco, cuenta de destino, monto y fecha.
+- **Hacer seguimiento a las entregas.** Cada entrega registra el cliente, el responsable, la dirección, la forma de pago (transferencia o efectivo) y la fecha. Además, avanza por cuatro estados: en preparación, lista, enviada y entregada. El sistema también guarda quién la creó.
+
+## Roles
+
+El sistema tiene tres tipos de usuario, y cada uno ve solo lo que necesita para su trabajo:
+
+| Rol | Para quién es | Qué puede hacer |
+|-----|---------------|-----------------|
+| **Administrador** (`ADMIN`) | Quien gestiona el negocio | Todo: usuarios, productos, categorías, transferencias y entregas |
+| **Bodeguero** (`WAREHOUSE_KEEPER`) | Quien maneja el inventario | Productos y categorías |
+| **Asesor comercial** (`COMMERCIAL_ADVISOR`) | Quien atiende a los clientes | Transferencias y entregas |
+
+Cualquier usuario que haya iniciado sesión puede consultar el listado de productos, porque este alimenta el indicador de stock del panel principal.
+
+## Cómo funciona la sesión
+
+Al registrarse o iniciar sesión, el servidor entrega dos tokens:
+
+- un **token de acceso**, de corta duración, que acompaña cada petición;
+- un **token de renovación**, que solo se envía a las rutas de autenticación y sirve para obtener un par nuevo cuando el de acceso expira.
+
+
+Si el cliente no es un navegador, como Postman o una integración, también puede enviar el token en el encabezado `Authorization: Bearer <token>`.
+
+Las contraseñas se guardan cifradas y las cuentas deshabilitadas no pueden autenticarse.
+
+## Endpoints principales
+
+Todas las rutas parten de `/api/v1`.
+
+**Autenticación** (públicas, salvo `/me`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/register` | Crea un usuario e inicia su sesión |
+| POST | `/auth/login` | Inicia sesión con correo y contraseña |
+| POST | `/auth/refresh` | Renueva los tokens de la sesión |
+| POST | `/auth/logout` | Cierra la sesión y borra las cookies |
+| GET | `/auth/me` | Devuelve el usuario de la sesión actual |
+
+**Usuarios:** `/users`, con listado, consulta, creación, edición y eliminación.
+
+**Categorías:** `/categories`, con listado, consulta, creación, edición y eliminación.
+
+**Productos:** `/products`, con listado, consulta, filtro por categoría (`/products/category/{id}`), creación, edición, eliminación y reducción de stock (`PATCH /products/{id}/reduce?quantity=N`).
+
+**Transferencias:** `/transfers`, con listado, consulta, creación y eliminación.
+
+**Entregas:** `/deliveries`, con listado, consulta, filtro por estado (`/deliveries/state/{estado}`), creación, cambio de estado (`PATCH /deliveries/{id}/state?state=...`) y eliminación.
+
+La documentación interactiva completa, con los modelos de cada petición y respuesta, está en Swagger:
 
 ```
-com.vria
- ├── auth          -> login / registro (emite JWT)
- │    ├── controller
- │    ├── dto
- │    └── service
- ├── config         -> seguridad, CORS, JWT, OpenAPI, manejo global de errores
- │    └── security
- ├── users          -> gestion de usuarios (User, TypeRole)
- │    ├── controller
- │    ├── dto
- │    ├── enums
- │    ├── model
- │    ├── repository
- │    └── service
- ├── products       -> catalogo (Product, Category)
- │    ├── controller
- │    ├── dto
- │    ├── model
- │    ├── repository
- │    └── service
- └── inventory      -> logistica (Transfer, Delivery, PayMode, StateDelivery)
-      ├── controller
-      ├── dto
-      ├── enums
-      ├── model
-      ├── repository
-      └── service
+http://localhost:8080/swagger-ui.html
 ```
 
-## Requisitos
+### Ejemplo: iniciar sesión
 
-- JDK 25
-- Maven 3.9+
-- PostgreSQL 15+ (crear una base de datos `vria_db`)
-
-## Configuracion
-
-Variables de entorno (con valores por defecto en `application.yml`):
-
-| Variable              | Descripcion                              | Default               |
-|-----------------------|-------------------------------------------|------------------------|
-| `DB_USERNAME`         | Usuario de PostgreSQL                     | `postgres`             |
-| `DB_PASSWORD`         | Password de PostgreSQL                    |               |
-| `JWT_SECRET`          | Clave Base64 para firmar los JWT (HS256)  | |
-| `JWT_EXPIRATION`      | Expiracion del access token (ms)          |         |
-| `JWT_REFRESH_EXPIRATION` | Expiracion del refresh token (ms)      |     |
-| `JWT_COOKIE_SECURE`   | Cookies de auth solo por HTTPS            | `true`                 |
-| `JWT_COOKIE_SAME_SITE` | Atributo SameSite de las cookies de auth | `Strict`               |
-
-> **Importante:** genera tu propio `JWT_SECRET` en produccion. Puedes crear uno con:
-> `openssl rand -base64 64`
-
-## Ejecutar el proyecto
-
-```bash
-mvn clean spring-boot:run
-```
-
-La API queda disponible en `http://localhost:8080`.
-
-Documentacion Swagger: `http://localhost:8080/swagger-ui.html`
-
-## Modulo de autenticacion (auth)
-
-Endpoints publicos (no requieren token):
-
-- `POST /api/v1/auth/register` — crea un usuario y devuelve el `accessToken` / `refreshToken`
-- `POST /api/v1/auth/login` — autentica por `email` + `password` y devuelve los tokens
-
-### Ejemplo de registro
-
-```json
-POST /api/v1/auth/register
-{
-  "name": "Ana",
-  "lastName": "Gomez",
-  "email": "ana.gomez@vria.com",
-  "password": "SuperSegura123",
-  "role": "ADMIN"
-}
-```
-
-### Ejemplo de login
-
-```json
+```http
 POST /api/v1/auth/login
+Content-Type: application/json
+
 {
   "email": "ana.gomez@vria.com",
   "password": "SuperSegura123"
 }
 ```
 
-Respuesta:
+Respuesta (los tokens `access_token` y `refresh_token`):
 
 ```json
 {
-  "accessToken": "eyJhbGciOi...",
-  "refreshToken": "eyJhbGciOi...",
-  "tokenType": "Bearer",
   "idUser": 1,
   "name": "Ana",
   "email": "ana.gomez@vria.com",
@@ -115,27 +90,59 @@ Respuesta:
 }
 ```
 
-Para consumir cualquier otro endpoint (usuarios, productos, categorias, inventario),
-envia el header:
+## Manejo de errores
+
+Los errores se devuelven siempre con la misma forma, para que el frontend los muestre sin complicaciones:
+
+- **400**: datos inválidos o una regla de negocio incumplida, por ejemplo un correo ya registrado o stock insuficiente. Si falla la validación de campos, la respuesta indica qué campo falló y por qué.
+- **401**: credenciales incorrectas o sesión inválida.
+- **403**: el usuario no tiene permiso para esa operación según su rol.
+- **500**: error inesperado del servidor.
+
+```json
+{
+  "timestamp": "2026-10-12T10:15:30",
+  "status": 400,
+  "message": "Stock insuficiente para el producto Silla: disponible 3, solicitado 5"
+}
+```
+
+## Organización del código
+
+El proyecto se organiza por módulos de negocio. Cada módulo agrupa sus propios controladores, servicios, repositorios, modelos y DTOs:
 
 ```
-Authorization: Bearer <accessToken>
+com.vria
+ ├── auth        → registro, inicio y cierre de sesión
+ ├── users       → usuarios y roles
+ ├── products    → productos y categorías
+ ├── transfer    → comprobantes de transferencia
+ ├── delivery    → entregas y su estado
+ └── config      → seguridad, JWT, CORS, Swagger y manejo de errores
 ```
 
-## Roles del sistema (TypeRole)
+## Requisitos
 
-- `ADMIN`
-- `WAREHOUSE_KEEPER`
-- `COMMERCIAL_ADVISOR`
+- JDK 25
+- Maven 3.9 o superior
+- PostgreSQL 15 o superior
 
-Los controladores usan `@PreAuthorize` para restringir operaciones sensibles
-(creacion/edicion/borrado) segun el rol.
+## Ejecutar el proyecto
 
-## Notas de diseno
+```bash
+mvn clean spring-boot:run
+```
 
-- `ddl-auto: update` esta activo para desarrollo; en produccion se recomienda
-  usar Flyway/Liquibase con migraciones versionadas.
-- Las contrasenas se almacenan con `BCryptPasswordEncoder`.
-- El filtro `JwtAuthenticationFilter` valida el token en cada request y
-  carga el `User` (que implementa `UserDetails`) directamente en el
-  `SecurityContext`.
+La API queda disponible en `http://localhost:8080`. Las tablas se crean automáticamente al arrancar.
+
+Para generar el empaquetado:
+
+```bash
+mvn clean package
+```
+
+Esto deja el ejecutable en `target/vria-backend.jar`.
+
+## Frontend
+
+El backend acepta peticiones con credenciales desde cualquier puerto de `localhost`, pensado para el frontend en Angular durante el desarrollo. Para desplegar en otro ambiente hay que agregar el dominio real del frontend en la configuración de CORS.
