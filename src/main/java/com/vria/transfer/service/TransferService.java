@@ -1,9 +1,14 @@
 package com.vria.transfer.service;
 
+import com.vria.notifications.enums.NotificationAction;
+import com.vria.notifications.enums.NotificationModule;
+import com.vria.notifications.event.ActivityEvent;
+import com.vria.notifications.support.Money;
 import com.vria.transfer.dto.TransferDTO;
 import com.vria.transfer.model.Transfer;
 import com.vria.transfer.repository.TransferRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +20,7 @@ import java.util.List;
 public class TransferService {
 
     private final TransferRepository transferRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<TransferDTO> findAll() {
@@ -34,11 +40,22 @@ public class TransferService {
                 .nameClient(dto.nameClient())
                 .bank(dto.bank())
                 .build();
-        return toDTO(transferRepository.save(entity));
+        Transfer saved = transferRepository.save(entity);
+        publish(NotificationAction.CREATED, saved, "Se registró una transferencia de " + Money.format(saved.getAmount())
+                + " de " + saved.getNameClient() + " por " + saved.getBank() + ".");
+        return toDTO(saved);
     }
 
     public void delete(Long id) {
-        transferRepository.delete(findEntity(id));
+        Transfer entity = findEntity(id);
+        transferRepository.delete(entity);
+        publish(NotificationAction.DELETED, entity, "Se eliminó la transferencia de " + Money.format(entity.getAmount())
+                + " de " + entity.getNameClient() + ".");
+    }
+
+    private void publish(NotificationAction action, Transfer transfer, String summary) {
+        eventPublisher.publishEvent(new ActivityEvent(
+                NotificationModule.TRANSFER, action, transfer.getIdTransfer(), transfer.getNameClient(), summary));
     }
 
     private Transfer findEntity(Long id) {

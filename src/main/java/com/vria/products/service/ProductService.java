@@ -1,5 +1,10 @@
 package com.vria.products.service;
 
+import com.vria.notifications.enums.NotificationAction;
+import com.vria.notifications.enums.NotificationModule;
+import com.vria.notifications.event.ActivityEvent;
+import com.vria.notifications.support.Money;
+import com.vria.notifications.support.Quantity;
 import com.vria.products.dto.ProductRequestDTO;
 import com.vria.products.dto.ProductResponseDTO;
 import com.vria.products.model.Category;
@@ -7,9 +12,11 @@ import com.vria.products.model.Product;
 import com.vria.products.repository.CategoryRepository;
 import com.vria.products.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,6 +26,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<ProductResponseDTO> findAll() {
@@ -46,11 +54,15 @@ public class ProductService {
                 .description(dto.description())
                 .photo(dto.photo())
                 .build();
-        return toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        publish(NotificationAction.CREATED, saved,
+                "Se agregó " + saved.getNameProduct() + " al inventario con " + Quantity.units(saved.getStock()) + ".");
+        return toResponse(saved);
     }
 
     public ProductResponseDTO update(Long id, ProductRequestDTO dto) {
         Product product = findEntity(id);
+        String changes = describeChanges(product, dto);
         product.setNameProduct(dto.nameProduct());
         product.setCategory(findCategory(dto.idCategory()));
         product.setStock(dto.stock());
@@ -58,7 +70,9 @@ public class ProductService {
         product.setReference(dto.reference());
         product.setDescription(dto.description());
         product.setPhoto(dto.photo());
-        return toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        publish(NotificationAction.UPDATED, saved, changes);
+        return toResponse(saved);
     }
 
     public ProductResponseDTO reduceProduct(int quantity, Long id) {
@@ -71,11 +85,46 @@ public class ProductService {
                     + ": disponible " + product.getStock() + ", solicitado " + quantity);
         }
         product.setStock(product.getStock() - quantity);
-        return toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        publish(NotificationAction.STOCK_REDUCED, saved, (quantity == 1 ? "Salió " : "Salieron ") + Quantity.units(quantity)
+                + " de " + saved.getNameProduct() + ". Quedan " + saved.getStock() + ".");
+        return toResponse(saved);
     }
 
     public void delete(Long id) {
-        productRepository.delete(findEntity(id));
+        Product product = findEntity(id);
+        productRepository.delete(product);
+        publish(NotificationAction.DELETED, product, "Se eliminó " + product.getNameProduct() + " del inventario.");
+    }
+
+    private void publish(NotificationAction action, Product product, String summary) {
+        eventPublisher.publishEvent(new ActivityEvent(
+                NotificationModule.PRODUCT, action, product.getIdProduct(), product.getNameProduct(), summary));
+    }
+
+    // Describe en una frase solo los cambios relevantes para inventario y ventas
+    private String describeChanges(Product current, ProductRequestDTO dto) {
+        List<String> changes = new ArrayList<>();
+        if (!current.getNameProduct().equals(dto.nameProduct())) {
+            changes.add("antes se llamaba " + current.getNameProduct());
+        }
+        if (current.getStock() != dto.stock()) {
+            changes.add("ahora hay " + Quantity.units(dto.stock()) + " (antes " + current.getStock() + ")");
+        }
+        if (Float.compare(current.getPrice(), dto.price()) != 0) {
+            changes.add("el precio pasó de " + Money.format(current.getPrice()) + " a " + Money.format(dto.price()));
+        }
+        if (changes.isEmpty()) {
+            return "Se actualizó la información de " + dto.nameProduct() + ".";
+        }
+        return "Se actualizó " + dto.nameProduct() + ": " + joinNatural(changes) + ".";
+    }
+
+    private static String joinNatural(List<String> parts) {
+        if (parts.size() == 1) {
+            return parts.getFirst();
+        }
+        return String.join(", ", parts.subList(0, parts.size() - 1)) + " y " + parts.getLast();
     }
 
     private Product findEntity(Long id) {

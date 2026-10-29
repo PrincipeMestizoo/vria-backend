@@ -36,6 +36,9 @@ vria:
       refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION}
       cookie-secure: ${JWT_COOKIE_SECURE}
       cookie-same-site: ${JWT_COOKIE_SAME_SITE}
+  # Zona horaria que define el dia de las notificaciones (se limpian a medianoche)
+  notifications:
+    zone: ${NOTIFICATIONS_ZONE:America/Bogota}
 
 logging:
   level:

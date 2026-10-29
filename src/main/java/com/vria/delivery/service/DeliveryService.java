@@ -4,9 +4,13 @@ import com.vria.delivery.dto.DeliveryDTO;
 import com.vria.delivery.enums.StateDelivery;
 import com.vria.delivery.model.Delivery;
 import com.vria.delivery.repository.DeliveryRepository;
+import com.vria.notifications.enums.NotificationAction;
+import com.vria.notifications.enums.NotificationModule;
+import com.vria.notifications.event.ActivityEvent;
 import com.vria.users.model.User;
 import com.vria.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +23,7 @@ public class DeliveryService {
 
     private final DeliveryRepository deliveryRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<DeliveryDTO> findAll() {
@@ -45,17 +50,31 @@ public class DeliveryService {
                 .state(dto.state())
                 .user(userRepository.getReferenceById(initiator.getIdUser()))
                 .build();
-        return toDTO(deliveryRepository.save(entity));
+        Delivery saved = deliveryRepository.save(entity);
+        publish(NotificationAction.CREATED, saved, "Se creó un domicilio para " + saved.getNameClient()
+                + " (" + saved.getState().getLabel().toLowerCase() + ").");
+        return toDTO(saved);
     }
 
     public DeliveryDTO updateState(Long id, StateDelivery state) {
         Delivery entity = findEntity(id);
+        StateDelivery previous = entity.getState();
         entity.setState(state);
-        return toDTO(deliveryRepository.save(entity));
+        Delivery saved = deliveryRepository.save(entity);
+        publish(NotificationAction.STATE_CHANGED, saved, "El domicilio de " + saved.getNameClient() + " pasó de "
+                + previous.getLabel().toLowerCase() + " a " + state.getLabel().toLowerCase() + ".");
+        return toDTO(saved);
     }
 
     public void delete(Long id) {
-        deliveryRepository.delete(findEntity(id));
+        Delivery entity = findEntity(id);
+        deliveryRepository.delete(entity);
+        publish(NotificationAction.DELETED, entity, "Se eliminó el domicilio de " + entity.getNameClient() + ".");
+    }
+
+    private void publish(NotificationAction action, Delivery delivery, String summary) {
+        eventPublisher.publishEvent(new ActivityEvent(
+                NotificationModule.DELIVERY, action, delivery.getIdDelivery(), delivery.getNameClient(), summary));
     }
 
     private Delivery findEntity(Long id) {

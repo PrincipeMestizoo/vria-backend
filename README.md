@@ -61,6 +61,22 @@ Todas las rutas parten de `/api/v1`.
 
 **Entregas:** `/deliveries`, con listado, consulta, filtro por estado (`/deliveries/state/{estado}`), creación, cambio de estado (`PATCH /deliveries/{id}/state?state=...`) y eliminación.
 
+**Notificaciones:** `/notifications`. Cada creación, edición, eliminación, salida de stock o cambio de estado de despacho queda registrado con su autor y fecha. Lo que ve cada usuario depende de su rol:
+
+| Rol | Ve |
+|-----|----|
+| Administrador | Todos los movimientos |
+| Encargado de bodega | Movimientos de productos y categorías, sin importar quién los hizo |
+| Asesor comercial | Movimientos de productos y categorías, más sus propias transferencias y domicilios |
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/notifications?module=PRODUCT&page=0&size=20` | Notificaciones del día, paginadas del más reciente al más antiguo (`module` es opcional) |
+| GET | `/notifications/unread-count` | Cantidad de notificaciones sin leer (no cuenta las acciones propias) |
+| PATCH | `/notifications/read-all` | Marca todo como leído |
+
+Las notificaciones son diarias: solo se muestran las del día en curso y a medianoche se eliminan las de días anteriores. El día se calcula con la zona horaria `NOTIFICATIONS_ZONE` (por defecto `America/Bogota`).
+
 La documentación interactiva completa, con los modelos de cada petición y respuesta, está en Swagger:
 
 ```
@@ -118,6 +134,7 @@ com.vria
  ├── products    → productos y categorías
  ├── transfer    → comprobantes de transferencia
  ├── delivery    → entregas y su estado
+ ├── notifications → historial de movimientos y su visibilidad por rol
  └── config      → seguridad, JWT, CORS, Swagger y manejo de errores
 ```
 

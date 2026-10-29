@@ -1,10 +1,14 @@
 package com.vria.users.service;
 
+import com.vria.notifications.enums.NotificationAction;
+import com.vria.notifications.enums.NotificationModule;
+import com.vria.notifications.event.ActivityEvent;
 import com.vria.users.dto.UserRequestDTO;
 import com.vria.users.dto.UserResponseDTO;
 import com.vria.users.model.User;
 import com.vria.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,6 +25,7 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ---- Requerido por Spring Security para autenticar por email ----
     @Override
@@ -55,7 +60,9 @@ public class UserService implements UserDetailsService {
                 .password(passwordEncoder.encode(dto.password()))
                 .role(dto.role())
                 .build();
-        return toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        publish(NotificationAction.CREATED, saved, "Se creó el usuario " + fullName(saved) + " como " + saved.getRole().getLabel() + ".");
+        return toResponse(saved);
     }
 
     public UserResponseDTO update(Long id, UserRequestDTO dto) {
@@ -68,12 +75,24 @@ public class UserService implements UserDetailsService {
         if (dto.password() != null && !dto.password().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.password()));
         }
-        return toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        publish(NotificationAction.UPDATED, saved, "Se actualizaron los datos de " + fullName(saved) + ".");
+        return toResponse(saved);
     }
 
     public void delete(Long id) {
         User user = findEntityById(id);
         userRepository.delete(user);
+        publish(NotificationAction.DELETED, user, "Se eliminó el usuario " + fullName(user) + ".");
+    }
+
+    private void publish(NotificationAction action, User user, String summary) {
+        eventPublisher.publishEvent(new ActivityEvent(
+                NotificationModule.USER, action, user.getIdUser(), fullName(user), summary));
+    }
+
+    private static String fullName(User user) {
+        return user.getName() + " " + user.getLastName();
     }
 
     private User findEntityById(Long id) {
