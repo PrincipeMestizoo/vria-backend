@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "products")
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Product {
@@ -42,4 +42,18 @@ public class Product {
     // URL de la imagen almacenada en Cloudinary
     @Column(name = "photo")
     private String photo;
+
+    /**
+     * Descuenta unidades del inventario validando que haya stock suficiente.
+     */
+    public void reduceStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad a reducir debe ser mayor a 0");
+        }
+        if (quantity > stock) {
+            throw new IllegalArgumentException("Stock insuficiente para el producto " + nameProduct
+                    + ": disponible " + stock + ", solicitado " + quantity);
+        }
+        stock -= quantity;
+    }
 }

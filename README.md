@@ -138,6 +138,20 @@ com.vria
  └── config      → seguridad, JWT, CORS, Swagger y manejo de errores
 ```
 
+Dentro de cada módulo, cada clase tiene una sola responsabilidad:
+
+| Paquete      | Responsabilidad                                                                 |
+|--------------|---------------------------------------------------------------------------------|
+| `controller` | Expone los endpoints HTTP y delega en los servicios.                            |
+| `service`    | Orquesta los casos de uso: valida, persiste y dispara las notificaciones.       |
+| `mapper`     | Convierte entre entidades y DTOs (`toDTO`/`toResponse`, `toEntity`, `updateEntity`). No consulta repositorios ni codifica contraseñas: recibe esos datos ya resueltos. |
+| `activity`   | Redacta el mensaje de cada movimiento y lo publica como `ActivityEvent` mediante `ActivityPublisher`. |
+| `model`      | Entidades JPA y reglas propias de la entidad (por ejemplo, `Product.reduceStock`). |
+| `repository` | Acceso a datos con Spring Data JPA.                                             |
+| `dto`        | Contratos de entrada y salida de la API.                                        |
+
+El módulo `notifications` divide su lógica en `NotificationRecorder` (registra los eventos), `NotificationQueryService` (consulta el historial visible por rol) y `NotificationReadTracker` (estado de lectura de cada usuario).
+
 ## Requisitos
 
 - JDK 25

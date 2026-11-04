@@ -1,9 +1,9 @@
 package com.vria.auth.service;
 
-import com.vria.auth.dto.AuthResponse;
 import com.vria.auth.dto.AuthSession;
 import com.vria.auth.dto.LoginRequest;
 import com.vria.auth.dto.RegisterRequest;
+import com.vria.auth.mapper.AuthMapper;
 import com.vria.config.security.JwtService;
 import com.vria.users.model.User;
 import com.vria.users.repository.UserRepository;
@@ -24,31 +24,21 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final AuthMapper authMapper;
 
     @Transactional
     public AuthSession register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Ya existe un usuario registrado con ese correo");
         }
-
-        User user = User.builder()
-                .name(request.name())
-                .lastName(request.lastName())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role(request.role())
-                .enabled(true)
-                .build();
-
-        userRepository.save(user);
-
+        User user = userRepository.save(authMapper.toEntity(request, passwordEncoder.encode(request.password())));
         return buildAuthSession(user);
     }
 
     @Transactional(readOnly = true)
     public AuthSession login(LoginRequest request) {
         // Delega la validacion de credenciales en el AuthenticationManager
-        // (usa DaoAuthenticationProvider -> UserService.loadUserByUsername + PasswordEncoder)
+        // (usa DaoAuthenticationProvider -> EmailUserDetailsService + PasswordEncoder)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
@@ -81,20 +71,11 @@ public class AuthService {
         }
     }
 
-    public AuthResponse toAuthResponse(User user) {
-        return AuthResponse.builder()
-                .idUser(user.getIdUser())
-                .name(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .build();
-    }
-
     private AuthSession buildAuthSession(User user) {
         return new AuthSession(
                 jwtService.generateToken(user),
                 jwtService.generateRefreshToken(user),
-                toAuthResponse(user)
+                authMapper.toAuthResponse(user)
         );
     }
 }

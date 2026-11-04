@@ -51,6 +51,10 @@ public class User implements UserDetails {
     @Column(name = "role", nullable = false, length = 30)
     private TypeRole role;
 
+    public String fullName() {
+        return name + " " + lastName;
+    }
+
     // ---- Contrato UserDetails ----
 
     @Override

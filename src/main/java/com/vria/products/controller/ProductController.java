@@ -50,8 +50,8 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}/reduce")
-    public ResponseEntity<ProductResponseDTO> reduceProduct(@PathVariable Long id, @RequestParam int quantity) {
-        return ResponseEntity.ok(productService.reduceProduct(quantity, id));
+    public ResponseEntity<ProductResponseDTO> reduceStock(@PathVariable Long id, @RequestParam int quantity) {
+        return ResponseEntity.ok(productService.reduceStock(id, quantity));
     }
 
     @DeleteMapping("/{id}")

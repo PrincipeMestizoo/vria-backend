@@ -4,6 +4,7 @@ import com.vria.auth.dto.AuthResponse;
 import com.vria.auth.dto.AuthSession;
 import com.vria.auth.dto.LoginRequest;
 import com.vria.auth.dto.RegisterRequest;
+import com.vria.auth.mapper.AuthMapper;
 import com.vria.auth.service.AuthService;
 import com.vria.config.security.AuthCookieService;
 import com.vria.users.model.User;
@@ -36,6 +37,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final AuthCookieService authCookieService;
+    private final AuthMapper authMapper;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -67,7 +69,7 @@ public class AuthController {
      */
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> me(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(authService.toAuthResponse(user));
+        return ResponseEntity.ok(authMapper.toAuthResponse(user));
     }
 
     private ResponseEntity<AuthResponse> withSessionCookies(HttpStatus status, AuthSession session) {

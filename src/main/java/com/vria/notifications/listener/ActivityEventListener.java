@@ -1,7 +1,7 @@
 package com.vria.notifications.listener;
 
 import com.vria.notifications.event.ActivityEvent;
-import com.vria.notifications.service.NotificationService;
+import com.vria.notifications.service.NotificationRecorder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -15,10 +15,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class ActivityEventListener {
 
-    private final NotificationService notificationService;
+    private final NotificationRecorder notificationRecorder;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onActivity(ActivityEvent event) {
-        notificationService.record(event);
+        notificationRecorder.record(event);
     }
 }

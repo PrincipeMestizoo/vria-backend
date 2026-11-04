@@ -1,14 +1,12 @@
 package com.vria.products.service;
 
-import com.vria.notifications.enums.NotificationAction;
-import com.vria.notifications.enums.NotificationModule;
-import com.vria.notifications.event.ActivityEvent;
+import com.vria.products.activity.CategoryActivityNotifier;
 import com.vria.products.dto.CategoryDTO;
+import com.vria.products.mapper.CategoryMapper;
 import com.vria.products.model.Category;
 import com.vria.products.repository.CategoryRepository;
 import com.vria.products.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,60 +19,52 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final CategoryMapper categoryMapper;
+    private final CategoryActivityNotifier activityNotifier;
 
     @Transactional(readOnly = true)
     public List<CategoryDTO> findAll() {
-        return categoryRepository.findAll().stream().map(this::toDTO).toList();
+        return categoryRepository.findAll().stream().map(categoryMapper::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public CategoryDTO findById(Long id) {
-        return toDTO(findEntity(id));
+        return categoryMapper.toDTO(findEntity(id));
+    }
+
+    /**
+     * Busca la categoria por id; un id nulo significa "sin categoria".
+     */
+    @Transactional(readOnly = true)
+    public Category findOptionalEntity(Long id) {
+        return id == null ? null : findEntity(id);
     }
 
     public CategoryDTO create(CategoryDTO dto) {
-        Category entity = Category.builder()
-                .nameCategory(dto.nameCategory())
-                .build();
-        Category saved = categoryRepository.save(entity);
-        publish(NotificationAction.CREATED, saved, "Se creó la categoría " + saved.getNameCategory() + ".");
-        return toDTO(saved);
+        Category saved = categoryRepository.save(categoryMapper.toEntity(dto));
+        activityNotifier.created(saved);
+        return categoryMapper.toDTO(saved);
     }
 
     public CategoryDTO update(Long id, CategoryDTO dto) {
-        Category entity = findEntity(id);
-        String previousName = entity.getNameCategory();
-        entity.setNameCategory(dto.nameCategory());
-        Category saved = categoryRepository.save(entity);
-        publish(NotificationAction.UPDATED, saved, previousName.equals(saved.getNameCategory())
-                ? "Se actualizó la categoría " + saved.getNameCategory() + "."
-                : "La categoría " + previousName + " ahora se llama " + saved.getNameCategory() + ".");
-        return toDTO(saved);
+        Category category = findEntity(id);
+        String previousName = category.getNameCategory();
+        categoryMapper.updateEntity(category, dto);
+        Category saved = categoryRepository.save(category);
+        activityNotifier.updated(previousName, saved);
+        return categoryMapper.toDTO(saved);
     }
 
     public void delete(Long id) {
-        Category entity = findEntity(id);
+        Category category = findEntity(id);
         // Desvincula los productos antes de borrar para no violar la llave foranea
         productRepository.clearCategory(id);
-        categoryRepository.delete(entity);
-        publish(NotificationAction.DELETED, entity, "Se eliminó la categoría " + entity.getNameCategory() + ".");
-    }
-
-    private void publish(NotificationAction action, Category category, String summary) {
-        eventPublisher.publishEvent(new ActivityEvent(
-                NotificationModule.CATEGORY, action, category.getIdCategory(), category.getNameCategory(), summary));
+        categoryRepository.delete(category);
+        activityNotifier.deleted(category);
     }
 
     private Category findEntity(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoria no encontrada con id: " + id));
-    }
-
-    private CategoryDTO toDTO(Category entity) {
-        return new CategoryDTO(
-                entity.getIdCategory(),
-                entity.getNameCategory()
-        );
     }
 }

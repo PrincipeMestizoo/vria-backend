@@ -1,4 +1,4 @@
-package com.vria.notifications.service;
+package com.vria.notifications.actor;
 
 import com.vria.users.model.User;
 
